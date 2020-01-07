@@ -65,13 +65,14 @@ int main(int argc, char** argv)
   int height = 167;
 
   CLI::App app{"morpho"};
+  /*
   app.add_option("-o", filename, "Output image");
   app.add_option("width", width, "width of the output image");
   app.add_option("height", height, "height of the output image");
   app.add_set("-m", mode, {"GPU", "CPU"}, "Either 'GPU' or 'CPU'");
 
   CLI11_PARSE(app, argc, argv);
-
+  */
   // Create buffer
   constexpr int kRGBASize = 4;
   int stride = width * kRGBASize;

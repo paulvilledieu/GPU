@@ -23,3 +23,4 @@ void render_cpu(char* buffer, int width, int height, std::ptrdiff_t stride, int 
 /// \param n_iterations Number of iterations maximal to decide if a point
 ///                     belongs to the mandelbrot set.
 void dilatation(char* buffer, char* img, int width, int height);
+

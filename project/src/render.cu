@@ -1,6 +1,7 @@
 #include "render.hpp"
 #include <spdlog/spdlog.h>
 #include <cassert>
+#include <iostream>
 
 [[gnu::noinline]]
 void _abortError(const char* msg, const char* fname, int line)
@@ -21,31 +22,60 @@ struct rgba8_t {
 };
 
 // Device code
-__global__ void mykernel(char* buffer, int width, int height, size_t pitch)
+__global__ void mykernel(char* buffer, char *image, int structuring_radius,
+                        int width, int height)
 {
-  float denum = width * width + height * height;
-
+  printf("here\n");
   int x = blockDim.x * blockIdx.x + threadIdx.x;
   int y = blockDim.y * blockIdx.y + threadIdx.y;
 
   if (x >= width || y >= height)
     return;
 
-  uchar4*  lineptr = (uchar4*)(buffer + y * pitch);
-  float    v       = (x * x + y * y) / denum;
-  uint8_t  grayv   = v * 255;
-
-
-  lineptr[x] = {grayv, grayv, grayv, 255};
+  printf("fouadfasdfasdfand\n");
+  int start_x = x-structuring_radius < 0 ? 0 : x-structuring_radius;
+  int start_y = y-structuring_radius < 0 ? 0 : y-structuring_radius;
+  int end_x = x+structuring_radius >= width ? width : x+structuring_radius;
+  int end_y = y+structuring_radius >= height ? height : y+structuring_radius;
+  bool stop = false;
+  for (int i = start_x; i < end_x && !stop; ++i)
+  {
+    for (int j = start_y; j < end_y && !stop; ++j)
+    {
+        printf("%f\n", image[i*width + j]);
+      if (image[i*width + j] > 0)
+      {
+        printf("found\n");
+        buffer[x*width + y] = 255;  
+        stop = true;
+      }
+    }
+  }
 }
 
 void dilatation(char* hostBuffer, char* image, int width, int height)
 {
-  cudaError_t rc = cudaSuccess;
+  //cudaError_t rc = cudaSuccess;
 
   // Allocate device memory
-  char*  devBuffer;
-  size_t pitch;
+  //char*  devBuffer;
+  //why not use pitch?
+  //size_t pitch;
+  char* devBuffer;
+  int bsize = 32;
+  dim3 block(bsize, bsize);
+   
+  int structuring_radius = 11;
+  auto a = std::ceil((float)width / bsize);
+  auto b = std::ceil((float)height / bsize);
+  printf("zidth %d %d \n", width, height);
+  printf("a %d b %d\n", a, b);
+  dim3 grid(a, b);
+  mykernel<<<grid, block>>>(devBuffer, image, structuring_radius, width, height);
+  
+  // Copy back to main memory
+  cudaMemcpy2D(hostBuffer, stride, devBuffer, pitch, width * sizeof(rgba8_t), height, cudaMemcpyDeviceToHost);
+  
   /*
   rc = cudaMallocPitch(&devBuffer, &pitch, width * sizeof(rgba8_t), height);
   if (rc)
@@ -78,3 +108,5 @@ void dilatation(char* hostBuffer, char* image, int width, int height)
     abortError("Unable to free memory");
   */
 }
+
+//n must be odd
