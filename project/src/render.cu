@@ -13,42 +13,12 @@ void _abortError(const char* msg, const char* fname, int line)
 
 #define abortError(msg) _abortError(msg, __FUNCTION__, __LINE__)
 
-
 struct rgba8_t {
   std::uint8_t r;
   std::uint8_t g;
   std::uint8_t b;
   std::uint8_t a;
 };
-
-rgba8_t heat_lut(float x)
-{
-  assert(0 <= x && x <= 1);
-  float x0 = 1.f / 4.f;
-  float x1 = 2.f / 4.f;
-  float x2 = 3.f / 4.f;
-
-  if (x < x0)
-  {
-    auto g = static_cast<std::uint8_t>(x / x0 * 255);
-    return rgba8_t{0, g, 255, 255};
-  }
-  else if (x < x1)
-  {
-    auto b = static_cast<std::uint8_t>((x1 - x) / x0 * 255);
-    return rgba8_t{0, 255, b, 255};
-  }
-  else if (x < x2)
-  {
-    auto r = static_cast<std::uint8_t>((x - x1) / x0 * 255);
-    return rgba8_t{r, 255, 0, 255};
-  }
-  else
-  {
-    auto b = static_cast<std::uint8_t>((1.f - x) / x0 * 255);
-    return rgba8_t{255, b, 0, 255};
-  }
-}
 
 // Device code
 __global__ void mykernel(char* buffer, int width, int height, size_t pitch)
@@ -69,14 +39,14 @@ __global__ void mykernel(char* buffer, int width, int height, size_t pitch)
   lineptr[x] = {grayv, grayv, grayv, 255};
 }
 
-void render(char* hostBuffer, int width, int height, std::ptrdiff_t stride, int n_iterations)
+void dilatation(char* hostBuffer, char* image, int width, int height)
 {
   cudaError_t rc = cudaSuccess;
 
   // Allocate device memory
   char*  devBuffer;
   size_t pitch;
-
+  /*
   rc = cudaMallocPitch(&devBuffer, &pitch, width * sizeof(rgba8_t), height);
   if (rc)
     abortError("Fail buffer allocation");
@@ -106,4 +76,5 @@ void render(char* hostBuffer, int width, int height, std::ptrdiff_t stride, int 
   rc = cudaFree(devBuffer);
   if (rc)
     abortError("Unable to free memory");
+  */
 }

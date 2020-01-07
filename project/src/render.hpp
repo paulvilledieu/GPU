@@ -22,4 +22,4 @@ void render_cpu(char* buffer, int width, int height, std::ptrdiff_t stride, int 
 /// \param stride Number of bytes between two lines
 /// \param n_iterations Number of iterations maximal to decide if a point
 ///                     belongs to the mandelbrot set.
-void render(char* buffer, int width, int height, std::ptrdiff_t stride, int n_iterations = 100);
+void dilatation(char* buffer, char* img, int width, int height);
