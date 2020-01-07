@@ -76,9 +76,4 @@ add_executable(morpho src/morpho.cpp)
 target_compile_features(morpho PUBLIC cxx_std_17)
 target_link_libraries(morpho PRIVATE render_cpu_ref PNG::PNG CLI11::CLI11 spdlog::spdlog renderer)
 
-add_executable(bench src/bench.cpp)
-target_compile_features(bench PUBLIC cxx_std_17)
-target_link_libraries(bench PRIVATE render_cpu_ref spdlog::spdlog benchmark renderer)
-
-
 
