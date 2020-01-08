@@ -92,7 +92,7 @@ int main(int argc, char** argv)
     auto buffer = std::make_unique<std::byte[]>(h * stride);
 
     spdlog::info("Runing {} mode with (w={},h={}).", mode, w, h);
-    
+   
     dilatation(reinterpret_cast<char*>(buffer.get()), rgb_image, w, h, stride);
     
     stbi_image_free(rgb_image); 

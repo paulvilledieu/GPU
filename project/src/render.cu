@@ -21,8 +21,8 @@ struct rgba8_t {
   std::uint8_t a;
 };
 
-// Device code
-__global__ void mykernel(char* buffer, unsigned char *image, int structuring_radius,
+// Executed on device, called by host
+__global__ void mykernel(unsigned char* buffer, unsigned char *image, int structuring_radius,
                         int width, int height, size_t pitch)
 {
   int x = blockDim.x * blockIdx.x + threadIdx.x;
@@ -37,24 +37,25 @@ __global__ void mykernel(char* buffer, unsigned char *image, int structuring_rad
   int end_y = y+structuring_radius >= height ? height : y+structuring_radius;
   bool stop = false;
 
-  printf("HERE\n");
   //printf("%d   %d\n", start_x, end_x);
   //printf("%d   %d\n", start_y, end_y);
-  for (int i = start_x; i < end_x && !stop; ++i)
+   
+ 
+  printf("%d\n", (int)image[0]);
+  /*for (int i = start_y; i < end_y && !stop; ++i)
   {
     //printf("%d  %d\n", threadIdx.x, threadIdx.y);
-    for (int j = start_y; j < end_y && !stop; ++j)
+    for (int j = start_x; j < end_x && !stop; ++j)
     {
-      printf("%d\n", j*pitch+i);
-      //printf("%c\n", image[j*pitch + i]);
-      if (image[j*pitch + i] > 0)
+      printf("%d\n", (int)image[i*pitch + j]);
+      if (image[i*pitch + j] > 0)
       {
         printf("found\n");
-        buffer[y*pitch + x] = 255;  
+        buffer[i*pitch + j] = 255;  
         stop = true;
       }
     }
-  }
+  }*/
 }
 
 void dilatation(char* hostBuffer, unsigned char* image, int width, int height, std::ptrdiff_t stride)
@@ -63,7 +64,7 @@ void dilatation(char* hostBuffer, unsigned char* image, int width, int height, s
 
   // Allocate device memory
   size_t pitch;
-  char* devBuffer;
+  unsigned char* devBuffer;
   int bsize = 32;
   dim3 block(bsize, bsize);
 
@@ -73,17 +74,22 @@ void dilatation(char* hostBuffer, unsigned char* image, int width, int height, s
     abortError("Fail buffer allocation");
 
 
-  int structuring_radius = 11;
+  int structuring_radius = 3;
   int a = std::ceil((float)width / bsize);
   int b = std::ceil((float)height / bsize);
-  printf("zidth %d %d \n", width, height);
+  printf("width %d %d \n", width, height);
   printf("a %d b %d\n", a, b);
   dim3 grid(a, b);
 
-  
   spdlog::debug("running kernel of size ({},{})", width, height);
-  
-  mykernel<<<grid, block>>>(devBuffer, image, structuring_radius, width, height, pitch);
+
+  // copy host data to device before calling the kernel
+  unsigned char* image_device;
+  cudaMalloc((void**)&image_device, width*height*sizeof(rgba8_t));
+  cudaMemcpy(image_device, image, width*height*sizeof(rgba8_t), cudaMemcpyHostToDevice);
+
+  mykernel<<<grid, block>>>(devBuffer, image_device, structuring_radius, width, height, pitch);
+  cudaError_t cudaerr = cudaDeviceSynchronize(); //waits for all kernels to run
   
   if (cudaPeekAtLastError())
     abortError("Computation Error");
@@ -95,9 +101,9 @@ void dilatation(char* hostBuffer, unsigned char* image, int width, int height, s
     abortError("Unable to copy buffer back to memory");
 
   // Free
-  //rc = cudaFree(devBuffer);
-  //if (rc)
-  //  abortError("Unable to free memory");
+  rc = cudaFree(devBuffer);
+  if (rc)
+    abortError("Unable to free memory");
 }
 
 //n must be odd
