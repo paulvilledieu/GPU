@@ -1,0 +1,7 @@
+# Erosion
+# Dilatation
+# Structuring Elements
+    # Square
+    # Ball
+# Benchmark using google lib
+    Currently have spdlog not include problem

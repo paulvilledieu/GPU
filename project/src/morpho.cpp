@@ -101,7 +101,7 @@ int main(int argc, char** argv)
       file.read (memblock, size);
       file.close();
     
-      dilatation(reinterpret_cast<char*>(buffer.get()), memblock, width, height);
+      dilatation(reinterpret_cast<char*>(buffer.get()), memblock, width, height, stride);
       //delete[] memblock;
     }
   }

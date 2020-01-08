@@ -7,3 +7,8 @@
 - How to run the project:
   $ cd build/
   $ ./run -m CPU
+
+- Benchmark lib :
+  https://github.com/google/benchmark
+
+
