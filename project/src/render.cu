@@ -41,21 +41,24 @@ __global__ void mykernel(unsigned char* buffer, unsigned char *image, int struct
   //printf("%d   %d\n", start_y, end_y);
    
  
-  printf("%d\n", (int)image[0]);
-  /*for (int i = start_y; i < end_y && !stop; ++i)
+  //printf("%d\n", (int)image[0]);
+  for (int i = start_y; i < end_y && !stop; ++i)
   {
     //printf("%d  %d\n", threadIdx.x, threadIdx.y);
     for (int j = start_x; j < end_x && !stop; ++j)
     {
-      printf("%d\n", (int)image[i*pitch + j]);
+      //printf("%d\n", (int)image[i*pitch + j]);
       if (image[i*pitch + j] > 0)
       {
-        printf("found\n");
-        buffer[i*pitch + j] = 255;  
+        //printf("found\n");
+        buffer[y*pitch + x] = 255;  
         stop = true;
       }
     }
-  }*/
+  }
+
+  //to check if we write correctly
+  //buffer[y*pitch + x] = 255;  
 }
 
 void dilatation(char* hostBuffer, unsigned char* image, int width, int height, std::ptrdiff_t stride)
@@ -85,8 +88,8 @@ void dilatation(char* hostBuffer, unsigned char* image, int width, int height, s
 
   // copy host data to device before calling the kernel
   unsigned char* image_device;
-  cudaMalloc((void**)&image_device, width*height*sizeof(rgba8_t));
-  cudaMemcpy(image_device, image, width*height*sizeof(rgba8_t), cudaMemcpyHostToDevice);
+  cudaMalloc((void**)&image_device, width*height*sizeof(unsigned char));
+  cudaMemcpy(image_device, image, width*height*sizeof(unsigned char), cudaMemcpyHostToDevice);
 
   mykernel<<<grid, block>>>(devBuffer, image_device, structuring_radius, width, height, pitch);
   cudaError_t cudaerr = cudaDeviceSynchronize(); //waits for all kernels to run
@@ -95,7 +98,7 @@ void dilatation(char* hostBuffer, unsigned char* image, int width, int height, s
     abortError("Computation Error");
   
   // Copy back to host
-  cudaMemcpy2D(hostBuffer, stride, devBuffer, pitch, width * sizeof(rgba8_t), height, cudaMemcpyDeviceToHost);
+  cudaMemcpy2D(hostBuffer, stride, devBuffer, pitch, width * sizeof(unsigned char), height, cudaMemcpyDeviceToHost);
   
   if (rc)
     abortError("Unable to copy buffer back to memory");

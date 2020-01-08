@@ -85,19 +85,44 @@ int main(int argc, char** argv)
 
     int w, h, bpp;
 
-    unsigned char* rgb_image = stbi_load(argv[1], &w, &h, &bpp, 3);
+
+    // STBI_grey -> 1 channel
+    unsigned char* rgb_image = stbi_load(argv[1], &w, &h, &bpp, STBI_grey);
     // Create buffer
     constexpr int kRGBASize = 4;
     int stride = w * kRGBASize;
     auto buffer = std::make_unique<std::byte[]>(h * stride);
 
     spdlog::info("Runing {} mode with (w={},h={}).", mode, w, h);
-   
+  
+  
+    int blacks = 0;
+    int whites = 0;
+    for (int i = 0; i < h; ++i)
+    {
+      for (int j = 0; j < w; ++j)
+      {
+        if (rgb_image[i*w+j] == 0)
+        {
+          ++blacks;
+        }
+        else
+        {
+          rgb_image[i*w+j] = 255;
+          ++whites;
+          //printf("%d\n", rgb_image[i*w+j]);
+        }
+      }
+    }
+
+    printf("found %d black and %d white pixels.\n", blacks, whites);
+  
     dilatation(reinterpret_cast<char*>(buffer.get()), rgb_image, w, h, stride);
     
     stbi_image_free(rgb_image); 
 
-    stbi_write_png("output.png", w, h, 3, buffer.get(), w*3);
+    int channel_number = 1; // write new image with 1 channel
+    stbi_write_png("output.png", w, h, channel_number, buffer.get(), w);
   }
 
   // Save
