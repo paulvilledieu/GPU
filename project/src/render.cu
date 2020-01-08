@@ -92,7 +92,8 @@ void dilatation(char* hostBuffer, unsigned char* image, int width, int height, s
   cudaMemcpy(image_device, image, width*height*sizeof(unsigned char), cudaMemcpyHostToDevice);
 
   mykernel<<<grid, block>>>(devBuffer, image_device, structuring_radius, width, height, pitch);
-  cudaError_t cudaerr = cudaDeviceSynchronize(); //waits for all kernels to run
+  cudaError_t cudaerr = cudaDeviceSynchronize();
+  //waits for all kernels to run. If there is an error in the kernel it will show here
   
   if (cudaPeekAtLastError())
     abortError("Computation Error");

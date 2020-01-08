@@ -1,7 +1,17 @@
-# Erosion
-# Dilatation
-# Structuring Elements
-    # Square
-    # Ball
+CPU
+  # Erosion     [ ]
+  # Dilatation  [ ]
+  # Structuring Elements  [ ]
+        # Square            [ ]
+        # Ball              [ ]
+
+GPU
+  # Erosion     [ ]
+  # Dilatation  [ ]
+  # Structuring Elements  [ ]
+        # Square            [ ]
+        # Ball              [ ]
+
 # Benchmark using google lib
-    Currently have spdlog not include problem
+  Currently have spdlog not include problem
+
