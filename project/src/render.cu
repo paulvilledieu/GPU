@@ -22,7 +22,7 @@ struct rgba8_t {
 };
 
 // Device code
-__global__ void mykernel(char* buffer, char *image, int structuring_radius,
+__global__ void mykernel(char* buffer, unsigned char *image, int structuring_radius,
                         int width, int height, size_t pitch)
 {
   int x = blockDim.x * blockIdx.x + threadIdx.x;
@@ -36,16 +36,15 @@ __global__ void mykernel(char* buffer, char *image, int structuring_radius,
   int end_x = x+structuring_radius >= width ? width : x+structuring_radius;
   int end_y = y+structuring_radius >= height ? height : y+structuring_radius;
   bool stop = false;
+
+  printf("HERE\n");
   //printf("%d   %d\n", start_x, end_x);
   //printf("%d   %d\n", start_y, end_y);
   for (int i = start_x; i < end_x && !stop; ++i)
   {
-
     //printf("%d  %d\n", threadIdx.x, threadIdx.y);
-  
-   for (int j = start_y; j < end_y && !stop; ++j)
+    for (int j = start_y; j < end_y && !stop; ++j)
     {
-      printf("HERE\n");
       printf("%d\n", j*pitch+i);
       //printf("%c\n", image[j*pitch + i]);
       if (image[j*pitch + i] > 0)
@@ -58,7 +57,7 @@ __global__ void mykernel(char* buffer, char *image, int structuring_radius,
   }
 }
 
-void dilatation(char* hostBuffer, char* image, int width, int height, std::ptrdiff_t stride)
+void dilatation(char* hostBuffer, unsigned char* image, int width, int height, std::ptrdiff_t stride)
 {
   cudaError_t rc = cudaSuccess;
 
