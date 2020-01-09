@@ -37,28 +37,29 @@ __global__ void mykernel(unsigned char* buffer, unsigned char *image, int struct
   int end_y = y+structuring_radius >= height ? height : y+structuring_radius;
   bool stop = false;
 
-  //printf("%d   %d\n", start_x, end_x);
-  //printf("%d   %d\n", start_y, end_y);
    
  
   //printf("%d\n", (int)image[0]);
-  for (int i = start_y; i < end_y && !stop; ++i)
+  /*for (int i = start_y; i < end_y && !stop; ++i)
   {
-    //printf("%d  %d\n", threadIdx.x, threadIdx.y);
+    printf("%d  %d\n", threadIdx.x, threadIdx.y);
     for (int j = start_x; j < end_x && !stop; ++j)
     {
-      //printf("%d\n", (int)image[i*pitch + j]);
+      printf("%d\n", (int)image[i*pitch + j]);
       if (image[i*pitch + j] > 0)
       {
-        //printf("found\n");
+        printf("found\n");
         buffer[y*pitch + x] = 255;  
         stop = true;
       }
     }
-  }
+  }*/
 
-  //to check if we write correctly
-  //buffer[y*pitch + x] = 255;  
+  //if (!stop)
+  if (x % 1000 == 0)
+    printf("%d\n", image[y*pitch+x]);
+  //printf("%d   %d   %d\n", x, y, y*pitch+x);
+  buffer[y*pitch+x] = image[y*pitch+x];
 }
 
 void dilatation(char* hostBuffer, unsigned char* image, int width, int height, std::ptrdiff_t stride)
@@ -72,7 +73,7 @@ void dilatation(char* hostBuffer, unsigned char* image, int width, int height, s
   dim3 block(bsize, bsize);
 
   // returns the best pitch (padding) which is the new row
-  rc = cudaMallocPitch(&devBuffer, &pitch, width * sizeof(rgba8_t), height);
+  rc = cudaMallocPitch(&devBuffer, &pitch, width * sizeof(unsigned char), height);
   if (rc)
     abortError("Fail buffer allocation");
 
@@ -89,7 +90,8 @@ void dilatation(char* hostBuffer, unsigned char* image, int width, int height, s
   // copy host data to device before calling the kernel
   unsigned char* image_device;
   cudaMalloc((void**)&image_device, width*height*sizeof(unsigned char));
-  cudaMemcpy(image_device, image, width*height*sizeof(unsigned char), cudaMemcpyHostToDevice);
+  cudaMemcpy2D(image_device, width*sizeof(unsigned char), image, pitch, width*sizeof(unsigned char), height, cudaMemcpyHostToDevice);
+  //cudaMemcpy(image_device, image, width*height*sizeof(unsigned char), cudaMemcpyHostToDevice);
 
   mykernel<<<grid, block>>>(devBuffer, image_device, structuring_radius, width, height, pitch);
   cudaError_t cudaerr = cudaDeviceSynchronize();

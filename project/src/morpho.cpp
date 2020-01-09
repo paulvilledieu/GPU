@@ -88,8 +88,9 @@ int main(int argc, char** argv)
 
     // STBI_grey -> 1 channel
     unsigned char* rgb_image = stbi_load(argv[1], &w, &h, &bpp, STBI_grey);
+    
     // Create buffer
-    constexpr int kRGBASize = 4;
+    constexpr int kRGBASize = 1;
     int stride = w * kRGBASize;
     auto buffer = std::make_unique<std::byte[]>(h * stride);
 
@@ -122,6 +123,7 @@ int main(int argc, char** argv)
     stbi_image_free(rgb_image); 
 
     int channel_number = 1; // write new image with 1 channel
+    
     stbi_write_png("output.png", w, h, channel_number, buffer.get(), w);
   }
 
