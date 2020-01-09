@@ -5,6 +5,7 @@
 #include <png.h>
 #include <iostream>
 #include <fstream>
+#include <ctime>
 #include "FreeImage.h"
 #include "render.hpp"
 
@@ -12,13 +13,6 @@
 
 void dilation_cpu(unsigned char* buffer, unsigned char* image, int width, int height)
 {
-  /*for (int y = 0; y < height; ++y)
-    {
-    for (int x = 0; x < width; ++x)
-    {
-    buffer[y*height+x] = image[y*height+x];
-    }
-    }*/
 
   int structuring_radius = 3;
 
@@ -35,13 +29,10 @@ void dilation_cpu(unsigned char* buffer, unsigned char* image, int width, int he
 
       for (int i = start_y; i < end_y && !stop; ++i)
       {
-        //printf("%d  %d\n", threadIdx.x, threadIdx.y);
         for (int j = start_x; j < end_x && !stop; ++j)
         {
-          //printf("%d\n", (int)image[i*width + j]);
           if (image[i*width + j] == 0)
           {
-            //printf("found\n");
             buffer[y*width + x] = 0;
             stop = true;
           }
@@ -53,6 +44,40 @@ void dilation_cpu(unsigned char* buffer, unsigned char* image, int width, int he
   }
 }
 
+void erosion_cpu(unsigned char* buffer, unsigned char* image, int width, int height)
+{
+
+  int structuring_radius = 2;
+
+  for (int y = 0; y < height; ++y)
+  {
+    for (int x = 0; x < width; ++x)
+    {
+
+      bool stop = false;
+      int start_x = x-structuring_radius < 0 ? 0 : x-structuring_radius;
+      int start_y = y-structuring_radius < 0 ? 0 : y-structuring_radius;
+      int end_x = x+structuring_radius >= width ? width : x+structuring_radius;
+      int end_y = y+structuring_radius >= height ? height : y+structuring_radius;
+
+      for (int i = start_y; i < end_y && !stop; ++i)
+      {
+        for (int j = start_x; j < end_x && !stop; ++j)
+        {
+          if ((int)image[i*width + j] == 255)
+          {
+            buffer[y*width + x] = 255;
+            stop = true;
+          }
+        }
+      }
+      if (!stop)
+        buffer[y*height+x] = 0;
+    }
+  }
+}
+
+
 void FIBITMAP_to_uc(FIBITMAP* image, unsigned char* buffer, int width, int height)
 {
   for (int y = 0; y < height; ++y)
@@ -62,10 +87,6 @@ void FIBITMAP_to_uc(FIBITMAP* image, unsigned char* buffer, int width, int heigh
       RGBQUAD val;
       FreeImage_GetPixelColor(image, x, y, &val);
       buffer[y*width+x] = val.rgbRed;
-      //if ((int)buffer[y*width+x] != 0)
-      //  std::cout << "1";
-      //else
-      //  std::cout << "0";
       std::cout << (int)buffer[y*width+x];
     }
     std::cout << std::endl;
@@ -108,9 +129,16 @@ int main(int argc, char** argv)
   std::cout << width << "  " << height << std::endl;
 
   unsigned char* buffer = (unsigned char *)malloc(width*height*sizeof(unsigned char));
-  dilation_cpu(buffer, uc_image, width, height);
+
+  std::clock_t start;
+
+  erosion_cpu(buffer, uc_image, width, height);
+
+  clock_t end = std::clock();
+  std::cout << "Time: " << (end - start) / (double)(CLOCKS_PER_SEC / 1000) << " ms" << std::endl;
 
   FIBITMAP* result = FreeImage_Allocate(width, height, BPP);
+
   if (!result)
   {
     std::cout << "Could not allocate new image." << std::endl;
