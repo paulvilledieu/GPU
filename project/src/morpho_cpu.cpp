@@ -10,6 +10,16 @@
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "../stb/stb_image_write.h"
 
+
+struct rgba8_t {
+  std::uint8_t r;
+  std::uint8_t g;
+  std::uint8_t b;
+  std::uint8_t a;
+};
+
+
+
 void write_png(const std::byte* buffer,
     int width,
     int height,
@@ -54,36 +64,46 @@ void write_png(const std::byte* buffer,
 }
 
 
-void dilatation_cpu(char* hostBuffer, unsigned char* image, int width, int height)
+void dilatation_cpu(rgba8_t* buffer, rgba8_t* image, int width, int height)
 {
-  int structuring_radius = 3;
-  bool stop = false;
-
-  for (int y = 0; y < height && !stop; ++y)
+  for (int y = 0; y < height; ++y)
   {
-    for (int x = 0; x < width && !stop; ++x)
+    for (int x = 0; x < width; ++x)
     {
-      int start_x = x-structuring_radius < 0 ? 0 : x-structuring_radius;
-      int start_y = y-structuring_radius < 0 ? 0 : y-structuring_radius;
-      int end_x = x+structuring_radius >= width ? width : x+structuring_radius;
-      int end_y = y+structuring_radius >= height ? height : y+structuring_radius;
-
-      for (int i = start_y; i < end_y && !stop; ++i)
-      {
-        //printf("%d  %d\n", threadIdx.x, threadIdx.y);
-        for (int j = start_x; j < end_x && !stop; ++j)
-        {
-          //printf("%d\n", (int)image[i*pitch + j]);
-          if (image[i*pitch + j] > 0)
-          {
-            //printf("found\n");
-            buffer[y*pitch + x] = 255;  
-            stop = true;
-          }
-        }
-      }
+      buffer[y*height+x] = image[y*height+x];
     }
   }
+
+  /*
+     int structuring_radius = 3;
+     bool stop = false;
+
+     for (int y = 0; y < height && !stop; ++y)
+     {
+     for (int x = 0; x < width && !stop; ++x)
+     {
+     int start_x = x-structuring_radius < 0 ? 0 : x-structuring_radius;
+     int start_y = y-structuring_radius < 0 ? 0 : y-structuring_radius;
+     int end_x = x+structuring_radius >= width ? width : x+structuring_radius;
+     int end_y = y+structuring_radius >= height ? height : y+structuring_radius;
+
+     for (int i = start_y; i < end_y && !stop; ++i)
+     {
+  //printf("%d  %d\n", threadIdx.x, threadIdx.y);
+  for (int j = start_x; j < end_x && !stop; ++j)
+  {
+  //printf("%d\n", (int)image[i*pitch + j]);
+  if (image[i*height + j] > 0)
+  {
+  //printf("found\n");
+  buffer[y*height + x] = 255;  
+  stop = true;
+  }
+  }
+  }
+  }
+  }
+   */
 }
 
 
@@ -103,7 +123,11 @@ int main(int argc, char** argv)
   // Create buffer
   constexpr int kRGBASize = 4;
   int stride = w * kRGBASize;
-  auto buffer = std::make_unique<std::byte[]>(h * stride);
+  //auto buffer = std::make_unique<std::byte[]>(h * stride);
+  rgba8_t* buffer = (rgba8_t*)malloc(w*h*sizeof(struct rgba8_t));
+  printf("h: %d, w: %d\n", h, w); 
+
+  
 
 
   int blacks = 0;
@@ -126,14 +150,26 @@ int main(int argc, char** argv)
 
   printf("found %d black and %d white pixels.\n", blacks, whites);
 
-  dilatation_cpu(reinterpret_cast<char*>(buffer.get()), rgb_image, w, h);
+  rgba8_t* new_image = (rgba8_t*)malloc(w*h*sizeof(struct rgba8_t));
 
-  stbi_image_free(rgb_image); 
+  for (int i = 0; i < h; ++i)
+  {
+    for (int j = 0; j < w; ++j)
+    {
+      unsigned char val = rgb_image[i*h+j];
+      new_image[i*h+j] = rgba8_t{val, val, val, 255};
+    }
+  }
+
+//  dilatation_cpu(reinterpret_cast<rgba8_t*>(buffer.get()), new_image, w, h);
+  dilatation_cpu(buffer, new_image, w, h);
+
+  //stbi_image_free(rgb_image); 
 
   int channel_number = 1; // write new image with 1 channel
-  stbi_write_png("output.png", w, h, channel_number, buffer.get(), w);
-  spdlog::info("Output saved in {}.", "output.png");
-  
+  //stbi_write_png("output.png", w, h, channel_number, buffer.get(), w);
+  //stbi_write_png("output.png", w, h, channel_number, buffer, w);
+  write_png(buffer, w, h, stride, "output.png");
   return 0;
 }
 
