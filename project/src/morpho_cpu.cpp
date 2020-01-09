@@ -5,66 +5,12 @@
 #include <png.h>
 #include <iostream>
 #include <fstream>
+#include "FreeImage.h"
 #include "render.hpp"
-#include "../stb/stb_image.h"
-#define STB_IMAGE_WRITE_IMPLEMENTATION
-#include "../stb/stb_image_write.h"
 
+#define BPP 24
 
-struct rgba8_t {
-  std::uint8_t r;
-  std::uint8_t g;
-  std::uint8_t b;
-  std::uint8_t a;
-};
-
-
-
-void write_png(const std::byte* buffer,
-    int width,
-    int height,
-    int stride,
-    const char* filename)
-{
-  png_structp png_ptr =
-    png_create_write_struct(PNG_LIBPNG_VER_STRING, nullptr, nullptr, nullptr);
-
-  if (!png_ptr)
-    return;
-
-  png_infop info_ptr = png_create_info_struct(png_ptr);
-  if (!info_ptr)
-  {
-    png_destroy_write_struct(&png_ptr, nullptr);
-    return;
-  }
-
-  FILE* fp = fopen(filename, "wb");
-  png_init_io(png_ptr, fp);
-
-  png_set_IHDR(png_ptr, info_ptr,
-      width,
-      height,
-      8,
-      PNG_COLOR_TYPE_RGB_ALPHA,
-      PNG_INTERLACE_NONE,
-      PNG_COMPRESSION_TYPE_DEFAULT,
-      PNG_FILTER_TYPE_DEFAULT);
-
-  png_write_info(png_ptr, info_ptr);
-  for (int i = 0; i < height; ++i)
-  {
-    png_write_row(png_ptr, reinterpret_cast<png_const_bytep>(buffer));
-    buffer += stride;
-  }
-
-  png_write_end(png_ptr, info_ptr);
-  png_destroy_write_struct(&png_ptr, nullptr);
-  fclose(fp);
-}
-
-
-void dilatation_cpu(rgba8_t* buffer, rgba8_t* image, int width, int height)
+void dilatation_cpu(unsigned char* buffer, unsigned char* image, int width, int height)
 {
   for (int y = 0; y < height; ++y)
   {
@@ -106,6 +52,38 @@ void dilatation_cpu(rgba8_t* buffer, rgba8_t* image, int width, int height)
    */
 }
 
+void FIBITMAP_to_uc(FIBITMAP* image, unsigned char* buffer, int width, int height)
+{
+  
+  for (int y = 0; y < height; ++y)
+  {
+    for (int x = 0; x < width; ++x)
+    {
+      RGBQUAD val;
+      buffer[y*height+x] = FreeImage_GetPixelColor(image, x, y, &val);
+    }
+  }
+}
+
+void uc_to_FIBITMAP(unsigned char* buffer, FIBITMAP* image, int width, int height)
+{
+  RGBQUAD color;
+  for (int y = 0; y < height; ++y)
+  {
+    for (int x = 0; x < width; ++x)
+    {
+      RGBQUAD color;
+      unsigned char val = buffer[y*width+x];
+
+      color.rgbRed = val;
+      color.rgbGreen = val;
+      color.rgbBlue = val;
+    
+      FreeImage_SetPixelColor(image, x, y, &color);
+    }
+  }
+ 
+}
 
 // Usage: ./mandel
 int main(int argc, char** argv)
@@ -116,60 +94,30 @@ int main(int argc, char** argv)
   if (argc < 2)
     return 1;
 
-  int w, h, bpp;
-
-  // STBI_grey -> 1 channel
-  unsigned char* rgb_image = stbi_load(argv[1], &w, &h, &bpp, STBI_grey);
-  // Create buffer
-  constexpr int kRGBASize = 4;
-  int stride = w * kRGBASize;
-  //auto buffer = std::make_unique<std::byte[]>(h * stride);
-  rgba8_t* buffer = (rgba8_t*)malloc(w*h*sizeof(struct rgba8_t));
-  printf("h: %d, w: %d\n", h, w); 
-
+  FIBITMAP* image = FreeImage_Load(FIF_PNG, argv[1], PNG_DEFAULT);
   
+  int width = FreeImage_GetWidth(image);
+  int height = FreeImage_GetHeight(image);
+  
+  unsigned char* uc_image = (unsigned char*)malloc(width*height*sizeof(unsigned char));
+  FIBITMAP_to_uc(image, uc_image, width, height);
 
+  unsigned char* buffer;
+  dilatation_cpu(buffer, uc_image, width, height);
 
-  int blacks = 0;
-  int whites = 0;
-  for (int i = 0; i < h; ++i)
+  FIBITMAP* result = FreeImage_Allocate(width, height, BPP);
+  
+  if (!result)
   {
-    for (int j = 0; j < w; ++j)
-    {
-      if (rgb_image[i*w+j] == 0)
-      {
-        ++blacks;
-      }
-      else
-      {
-        rgb_image[i*w+j] = 255;
-        ++whites;
-      }
-    }
+    std::cout << "Could not allocate new image." << std::endl;
+    exit(1);
   }
 
-  printf("found %d black and %d white pixels.\n", blacks, whites);
+  uc_to_FIBITMAP(buffer, result, width, height);
+  
+  if (FreeImage_Save(FIF_PNG, result, "output.png", 0))
+    std::cout << "Image output.png saved." << std::endl;
 
-  rgba8_t* new_image = (rgba8_t*)malloc(w*h*sizeof(struct rgba8_t));
-
-  for (int i = 0; i < h; ++i)
-  {
-    for (int j = 0; j < w; ++j)
-    {
-      unsigned char val = rgb_image[i*h+j];
-      new_image[i*h+j] = rgba8_t{val, val, val, 255};
-    }
-  }
-
-//  dilatation_cpu(reinterpret_cast<rgba8_t*>(buffer.get()), new_image, w, h);
-  dilatation_cpu(buffer, new_image, w, h);
-
-  //stbi_image_free(rgb_image); 
-
-  int channel_number = 1; // write new image with 1 channel
-  //stbi_write_png("output.png", w, h, channel_number, buffer.get(), w);
-  //stbi_write_png("output.png", w, h, channel_number, buffer, w);
-  write_png(buffer, w, h, stride, "output.png");
   return 0;
 }
 
