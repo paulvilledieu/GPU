@@ -3,57 +3,16 @@
 #include <cstddef>
 #include <memory>
 #include <png.h>
-#include <CLI/CLI.hpp>
-#include <spdlog/spdlog.h>
 #include <iostream>
 #include <fstream>
 #include "render.hpp"
-#include "../stb/stb_image.h"
-#define STB_IMAGE_WRITE_IMPLEMENTATION
-#include "../stb/stb_image_write.h"
-void write_png(const std::byte* buffer,
-               int width,
-               int height,
-               int stride,
-               const char* filename)
-{
-  png_structp png_ptr =
-    png_create_write_struct(PNG_LIBPNG_VER_STRING, nullptr, nullptr, nullptr);
+#define _GLIBCXX_USE_CXX11_ABI 0 
+#include "FreeImage.h"
+#include "utils.hh"
+#include <ctime>
 
-  if (!png_ptr)
-    return;
 
-  png_infop info_ptr = png_create_info_struct(png_ptr);
-  if (!info_ptr)
-  {
-    png_destroy_write_struct(&png_ptr, nullptr);
-    return;
-  }
-
-  FILE* fp = fopen(filename, "wb");
-  png_init_io(png_ptr, fp);
-
-  png_set_IHDR(png_ptr, info_ptr,
-               width,
-               height,
-               8,
-               PNG_COLOR_TYPE_RGB_ALPHA,
-               PNG_INTERLACE_NONE,
-               PNG_COMPRESSION_TYPE_DEFAULT,
-               PNG_FILTER_TYPE_DEFAULT);
-
-  png_write_info(png_ptr, info_ptr);
-  for (int i = 0; i < height; ++i)
-  {
-    png_write_row(png_ptr, reinterpret_cast<png_const_bytep>(buffer));
-    buffer += stride;
-  }
-
-  png_write_end(png_ptr, info_ptr);
-  png_destroy_write_struct(&png_ptr, nullptr);
-  fclose(fp);
-}
-
+#define BPP 24
 
 // Usage: ./mandel
 int main(int argc, char** argv)
@@ -61,17 +20,8 @@ int main(int argc, char** argv)
   (void) argc;
   (void) argv;
 
-   CLI::App app{"morpho"};
-  /*
-  app.add_option("-o", filename, "Output image");
-  app.add_option("width", width, "width of the output image");
-  app.add_option("height", height, "height of the output image");
-  app.add_set("-m", mode, {"GPU", "CPU"}, "Either 'GPU' or 'CPU'");
+  // Rendering
 
-  CLI11_PARSE(app, argc, argv);
-  */
-   // Rendering
-  
   std::string mode = "GPU";
   if (mode == "CPU")
   {
@@ -83,53 +33,47 @@ int main(int argc, char** argv)
     if (argc < 2)
       return 1;
 
-    int w, h, bpp;
+    FreeImage_Initialise();
+    FIBITMAP* image = FreeImage_Load(FIF_BMP, argv[1], BMP_DEFAULT);
+    int width = FreeImage_GetWidth(image);
+    int height = FreeImage_GetHeight(image);
 
+    unsigned char* uc_image = (unsigned char*)malloc(width*height*sizeof(unsigned char));
+    FIBITMAP_to_uc(image, uc_image, width, height);
+    std::cout << width << "  " << height << std::endl;
 
-    // STBI_grey -> 1 channel
-    unsigned char* rgb_image = stbi_load(argv[1], &w, &h, &bpp, STBI_grey);
-    
-    // Create buffer
-    constexpr int kRGBASize = 1;
-    int stride = w * kRGBASize;
-    auto buffer = std::make_unique<std::byte[]>(h * stride);
+    unsigned char* buffer = (unsigned char *)malloc(width*height*sizeof(unsigned char));
 
-    spdlog::info("Runing {} mode with (w={},h={}).", mode, w, h);
-  
-  
-    int blacks = 0;
-    int whites = 0;
-    for (int i = 0; i < h; ++i)
+    std::clock_t start;
+
+   // erosion_cpu(buffer, uc_image, width, height);
+
+    clock_t end = std::clock();
+    std::cout << "Time: " << (end - start) / (double)(CLOCKS_PER_SEC / 1000) << " ms" << std::endl;
+
+    FIBITMAP* result = FreeImage_Allocate(width, height, BPP);
+
+    if (!result)
     {
-      for (int j = 0; j < w; ++j)
-      {
-        if (rgb_image[i*w+j] == 0)
-        {
-          ++blacks;
-        }
-        else
-        {
-          rgb_image[i*w+j] = 255;
-          ++whites;
-          //printf("%d\n", rgb_image[i*w+j]);
-        }
-      }
+      std::cout << "Could not allocate new image." << std::endl;
+      exit(1);
     }
 
-    printf("found %d black and %d white pixels.\n", blacks, whites);
-  
-    dilatation(reinterpret_cast<char*>(buffer.get()), rgb_image, w, h, stride);
-    
-    stbi_image_free(rgb_image); 
+    uc_to_FIBITMAP(buffer, result, width, height);
+    if (FreeImage_Save(FIF_BMP, result, "output.bmp", BMP_DEFAULT))
+      std::cout << "Image output.bmp saved." << std::endl;
+    FreeImage_DeInitialise();
 
-    int channel_number = 1; // write new image with 1 channel
-    
-    stbi_write_png("output.png", w, h, channel_number, buffer.get(), w);
+
+    // Create buffer
+    //auto buffer = std::make_unique<std::byte[]>(h * stride);
+    //    dilatation(reinterpret_cast<char*>(buffer.get()), rgb_image, w, h, stride);
+
   }
 
   // Save
   //write_png(buffer.get(), width, height, stride, filename.c_str());
- 
-  spdlog::info("Output saved in {}.", "output.png");
+
+  std::cout << "Output saved in output_gpu" << std::endl;
 }
 

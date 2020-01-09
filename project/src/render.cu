@@ -1,5 +1,4 @@
 #include "render.hpp"
-#include <spdlog/spdlog.h>
 #include <cassert>
 #include <iostream>
 
@@ -7,8 +6,8 @@
 void _abortError(const char* msg, const char* fname, int line)
 {
   cudaError_t err = cudaGetLastError();
-  spdlog::error("{} ({}, line: {})", msg, fname, line);
-  spdlog::error("Error {}: {}", cudaGetErrorName(err), cudaGetErrorString(err));
+  //spdlog::error("{} ({}, line: {})", msg, fname, line);
+  //spdlog::error("Error {}: {}", cudaGetErrorName(err), cudaGetErrorString(err));
   std::exit(1);
 }
 
@@ -85,7 +84,7 @@ void dilatation(char* hostBuffer, unsigned char* image, int width, int height, s
   printf("a %d b %d\n", a, b);
   dim3 grid(a, b);
 
-  spdlog::debug("running kernel of size ({},{})", width, height);
+  //spdlog::debug("running kernel of size ({},{})", width, height);
 
   // copy host data to device before calling the kernel
   unsigned char* image_device;
