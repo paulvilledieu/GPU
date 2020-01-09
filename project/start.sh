@@ -1,1 +1,5 @@
-mkdir build && cd build ; cmake .. ; make all -j
+rm -rf build;
+mkdir build;
+cd build;
+cmake .. ;
+make all -j;
