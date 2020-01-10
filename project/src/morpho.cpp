@@ -37,10 +37,11 @@ int main(int argc, char** argv)
 
   std::clock_t start;
 
+  int stride = 1;
   if (!type.compare("dilation"))
-    dilation_cpu(buffer, uc_image, width, height);
-  else
-    erosion_cpu(buffer, uc_image, width, height);
+    dilation(buffer, uc_image, width, height, stride);
+  //else
+  //  erosion(buffer, uc_image, width, height);
 
   clock_t end = std::clock();
   std::cout << "Time: " << (end - start) / (double)(CLOCKS_PER_SEC / 1000) << " ms" << std::endl;

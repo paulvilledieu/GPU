@@ -58,17 +58,17 @@ __global__ void mykernel(unsigned char* buffer, unsigned char *image, int struct
   if (x % 1000 == 0)
     printf("%d\n", image[y*pitch+x]);
   //printf("%d   %d   %d\n", x, y, y*pitch+x);
-  buffer[y*pitch+x] = image[y*pitch+x];
+  buffer[y*pitch+x] = image[y*width+x];
 }
 
-void dilatation(char* hostBuffer, unsigned char* image, int width, int height, std::ptrdiff_t stride)
+void dilation(unsigned char* hostBuffer, unsigned char* image, int width, int height, std::ptrdiff_t stride)
 {
   cudaError_t rc = cudaSuccess;
 
   // Allocate device memory
   size_t pitch;
   unsigned char* devBuffer;
-  int bsize = 32;
+  int bsize = 2;
   dim3 block(bsize, bsize);
 
   // returns the best pitch (padding) which is the new row
@@ -77,31 +77,30 @@ void dilatation(char* hostBuffer, unsigned char* image, int width, int height, s
     abortError("Fail buffer allocation");
 
 
-  int structuring_radius = 3;
-  int a = std::ceil((float)width / bsize);
-  int b = std::ceil((float)height / bsize);
+  int structuring_radius = 1;
+  int size_x = std::ceil((float)width / bsize);
+  int size_y = std::ceil((float)height / bsize);
   printf("width %d %d \n", width, height);
-  printf("a %d b %d\n", a, b);
-  dim3 grid(a, b);
+  printf("a %d b %d\n", size_x, size_y);
+  dim3 grid(size_x, size_y);
 
-  //spdlog::debug("running kernel of size ({},{})", width, height);
 
   // copy host data to device before calling the kernel
   unsigned char* image_device;
   cudaMalloc((void**)&image_device, width*height*sizeof(unsigned char));
-  cudaMemcpy2D(image_device, width*sizeof(unsigned char), image, pitch, width*sizeof(unsigned char), height, cudaMemcpyHostToDevice);
-  //cudaMemcpy(image_device, image, width*height*sizeof(unsigned char), cudaMemcpyHostToDevice);
+  //cudaMemcpy2D(image_device, width*sizeof(unsigned char), image, pitch, width*sizeof(unsigned char), height, cudaMemcpyHostToDevice);
+  cudaMemcpy(image_device, image, width*height*sizeof(unsigned char), cudaMemcpyHostToDevice);
 
   mykernel<<<grid, block>>>(devBuffer, image_device, structuring_radius, width, height, pitch);
   cudaError_t cudaerr = cudaDeviceSynchronize();
   //waits for all kernels to run. If there is an error in the kernel it will show here
-  
+
   if (cudaPeekAtLastError())
     abortError("Computation Error");
-  
+
   // Copy back to host
   cudaMemcpy2D(hostBuffer, stride, devBuffer, pitch, width * sizeof(unsigned char), height, cudaMemcpyDeviceToHost);
-  
+
   if (rc)
     abortError("Unable to copy buffer back to memory");
 
