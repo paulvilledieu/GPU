@@ -5,6 +5,7 @@ import pandas as pd
 
 def image_to_txt(src, dst):
     im = cv2.imread(src, cv2.IMREAD_GRAYSCALE).astype(int)
+    print(f"Image of shape ({im.shape[0]}, {im.shape[1]}).")
     for i in range(im.shape[0]):
         for j in range(im.shape[1]):
             if im[i, j] < 127:

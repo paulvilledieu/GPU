@@ -11,7 +11,7 @@
 void dilation_cpu(unsigned char* buffer, unsigned char* image, int width, int height)
 {
 
-  int structuring_radius = 1;
+  int structuring_radius = 20;
 
   for (int y = 0; y < height; ++y)
   {
@@ -21,8 +21,8 @@ void dilation_cpu(unsigned char* buffer, unsigned char* image, int width, int he
       bool stop = false;
       int start_x = x-structuring_radius < 0 ? 0 : x-structuring_radius;
       int start_y = y-structuring_radius < 0 ? 0 : y-structuring_radius;
-      int end_x = x+structuring_radius > width ? width : x+structuring_radius;
-      int end_y = y+structuring_radius > height ? height : y+structuring_radius;
+      int end_x = x+structuring_radius > width - 1 ? width - 1 : x+structuring_radius;
+      int end_y = y+structuring_radius > height - 1 ? height - 1: y+structuring_radius;
 
       for (int i = start_y; i <= end_y && !stop; ++i)
       {
@@ -44,7 +44,7 @@ void dilation_cpu(unsigned char* buffer, unsigned char* image, int width, int he
 void erosion_cpu(unsigned char* buffer, unsigned char* image, int width, int height)
 {
 
-  int structuring_radius = 1;
+  int structuring_radius = 10;
 
   for (int y = 0; y < height; ++y)
   {
@@ -54,8 +54,8 @@ void erosion_cpu(unsigned char* buffer, unsigned char* image, int width, int hei
       bool stop = false;
       int start_x = x-structuring_radius < 0 ? 0 : x-structuring_radius;
       int start_y = y-structuring_radius < 0 ? 0 : y-structuring_radius;
-      int end_x = x+structuring_radius > width ? width : x+structuring_radius;
-      int end_y = y+structuring_radius > height ? height : y+structuring_radius;
+      int end_x = x+structuring_radius > width - 1 ? width - 1 : x+structuring_radius;
+      int end_y = y+structuring_radius > height - 1 ? height - 1 : y+structuring_radius;
 
       for (int i = start_y; i <= end_y && !stop; ++i)
       {

@@ -55,7 +55,7 @@ int main(int argc, char** argv)
   cudaMemcpy(src_host, uc_image, size, cudaMemcpyHostToHost);
   cudaMemcpy(src_device, src_host, size, cudaMemcpyHostToDevice);
 
-  int structuring_radius = 1;
+  int structuring_radius = 12;
 
   run_kernel(type, dst_device, src_device, width, height, structuring_radius, stride);
 
