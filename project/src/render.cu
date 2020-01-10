@@ -2,7 +2,7 @@
 #include <cassert>
 #include <iostream>
 
-[[gnu::noinline]]
+  [[gnu::noinline]]
 void _abortError(const char* msg, const char* fname, int line)
 {
   cudaError_t err = cudaGetLastError();
@@ -15,7 +15,7 @@ void _abortError(const char* msg, const char* fname, int line)
 
 // Executed on device, called by host
 __global__ void kernel_dilation(unsigned char* dst_device, unsigned char *src_device, int structuring_radius,
-                        int width, int height)
+    int width, int height)
 {
   int x = blockDim.x * blockIdx.x + threadIdx.x;
   int y = blockDim.y * blockIdx.y + threadIdx.y;
@@ -25,8 +25,8 @@ __global__ void kernel_dilation(unsigned char* dst_device, unsigned char *src_de
 
   int start_x = x-structuring_radius < 0 ? 0 : x-structuring_radius;
   int start_y = y-structuring_radius < 0 ? 0 : y-structuring_radius;
-  int end_x = x+structuring_radius > width ? width : x+structuring_radius;
-  int end_y = y+structuring_radius > height ? height : y+structuring_radius;
+  int end_x = x+structuring_radius > width - 1 ? width - 1 : x+structuring_radius;
+  int end_y = y+structuring_radius > height - 1 ? height - 1 : y+structuring_radius;
   bool stop = false;
 
   for (int i = start_y; i <= end_y && !stop; ++i)
@@ -46,7 +46,7 @@ __global__ void kernel_dilation(unsigned char* dst_device, unsigned char *src_de
 }
 
 __global__ void kernel_erosion(unsigned char* dst_device, unsigned char *src_device, int structuring_radius,
-                        int width, int height)
+    int width, int height)
 {
   int x = blockDim.x * blockIdx.x + threadIdx.x;
   int y = blockDim.y * blockIdx.y + threadIdx.y;
@@ -56,8 +56,8 @@ __global__ void kernel_erosion(unsigned char* dst_device, unsigned char *src_dev
 
   int start_x = x-structuring_radius < 0 ? 0 : x-structuring_radius;
   int start_y = y-structuring_radius < 0 ? 0 : y-structuring_radius;
-  int end_x = x+structuring_radius > width ? width : x+structuring_radius;
-  int end_y = y+structuring_radius > height ? height : y+structuring_radius;
+  int end_x = x+structuring_radius > width - 1 ? width - 1 : x+structuring_radius;
+  int end_y = y+structuring_radius > height - 1 ? height - 1 : y+structuring_radius;
   bool stop = false;
 
   for (int i = start_y; i <= end_y && !stop; ++i)
@@ -76,9 +76,112 @@ __global__ void kernel_erosion(unsigned char* dst_device, unsigned char *src_dev
     dst_device[y*width+x] = 0;
 }
 
+__global__ void kernel_dilation_sep_1(unsigned char* tmp_device, unsigned char *src_device,
+    int structuring_radius, int width, int height)
+{
+  int x = blockDim.x * blockIdx.x + threadIdx.x;
+  int y = blockDim.y * blockIdx.y + threadIdx.y;
+
+  if (x >= width || y >= height)
+    return;
+
+  int start_x = x-structuring_radius < 0 ? 0 : x-structuring_radius;
+  int end_x = x+structuring_radius > width - 1? width - 1: x+structuring_radius;
+  bool stop = false;
+
+  for (int i = start_x; i <= end_x && !stop; ++i)
+  {
+    if (src_device[y*width+ i] == 0)
+    {
+      tmp_device[y*width+ x] = 0;
+      stop = true;
+    }
+  }
+
+  if (!stop)
+    tmp_device[y*width+x] = 255;
+}
+
+__global__ void kernel_dilation_sep_2(unsigned char* dst_device, unsigned char *tmp_device,
+    int structuring_radius, int width, int height)
+{
+  int x = blockDim.x * blockIdx.x + threadIdx.x;
+  int y = blockDim.y * blockIdx.y + threadIdx.y;
+
+  if (x >= width || y >= height)
+    return;
+
+  int start_y = y-structuring_radius < 0 ? 0 : y-structuring_radius;
+  int end_y = y+structuring_radius > height - 1? height - 1: y+structuring_radius;
+  bool stop = false;
+
+  for (int j = start_y; j <= end_y && !stop; ++j)
+  {
+    if (tmp_device[j*width+ x] == 0)
+    {
+      dst_device[y*width+ x] = 0;
+      stop = true;
+    }
+  }
+
+  if (!stop)
+    dst_device[y*width+x] = 255;
+}
+
+__global__ void kernel_erosion_sep_1(unsigned char* tmp_device, unsigned char *src_device,
+    int structuring_radius, int width, int height)
+{
+  int x = blockDim.x * blockIdx.x + threadIdx.x;
+  int y = blockDim.y * blockIdx.y + threadIdx.y;
+
+  if (x >= width || y >= height)
+    return;
+
+  int start_x = x-structuring_radius < 0 ? 0 : x-structuring_radius;
+  int end_x = x+structuring_radius > width - 1? width - 1: x+structuring_radius;
+  bool stop = false;
+
+  for (int i = start_x; i <= end_x && !stop; ++i)
+  {
+    if (src_device[y*width+ i] == 255)
+    {
+      tmp_device[y*width+ x] = 255;
+      stop = true;
+    }
+  }
+
+  if (!stop)
+    tmp_device[y*width+x] = 0;
+}
+
+__global__ void kernel_erosion_sep_2(unsigned char* dst_device, unsigned char *tmp_device,
+    int structuring_radius, int width, int height)
+{
+  int x = blockDim.x * blockIdx.x + threadIdx.x;
+  int y = blockDim.y * blockIdx.y + threadIdx.y;
+
+  if (x >= width || y >= height)
+    return;
+
+  int start_y = y-structuring_radius < 0 ? 0 : y-structuring_radius;
+  int end_y = y+structuring_radius > height - 1? height - 1: y+structuring_radius;
+  bool stop = false;
+
+  for (int j = start_y; j <= end_y && !stop; ++j)
+  {
+    if (tmp_device[j*width+ x] == 255)
+    {
+      dst_device[y*width+ x] = 255;
+      stop = true;
+    }
+  }
+
+  if (!stop)
+    dst_device[y*width+x] = 0;
+}
 
 void run_kernel(std::string type, unsigned char* dst_device, unsigned char* src_device,
-                int width, int height, int structuring_radius, std::ptrdiff_t stride)
+    int width, int height, int structuring_radius, std::ptrdiff_t stride)
 {
   // Allocate device memory
   int bsize = 2;
@@ -94,9 +197,27 @@ void run_kernel(std::string type, unsigned char* dst_device, unsigned char* src_
 
   if (!type.compare("dilation"))
     kernel_dilation<<<grid, block>>>(dst_device, src_device, structuring_radius, width, height);
-  else
+  else if (!type.compare("erosion"))
     kernel_erosion<<<grid, block>>>(dst_device, src_device, structuring_radius, width, height);
+  else
+  {
+    unsigned char *tmp_device;
+    cudaMallocHost((void**)&tmp_device, width * height * sizeof(unsigned char *));
 
+    if (!type.compare("dilation_sep"))
+    {
+      kernel_dilation_sep_1<<<grid, block>>>(tmp_device, src_device, structuring_radius, width, height);
+      cudaError_t cudaerr = cudaDeviceSynchronize();
+      kernel_dilation_sep_2<<<grid, block>>>(dst_device, tmp_device, structuring_radius, width, height);
+
+    }
+    else
+    {
+      kernel_erosion_sep_1<<<grid, block>>>(tmp_device, src_device, structuring_radius, width, height);
+      cudaError_t cudaerr = cudaDeviceSynchronize();
+      kernel_erosion_sep_2<<<grid, block>>>(dst_device, tmp_device, structuring_radius, width, height);
+    }
+  }
 
   cudaError_t cudaerr = cudaDeviceSynchronize();
   //waits for all kernels to run. If there is an error in the kernel it will show here
