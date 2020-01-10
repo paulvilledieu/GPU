@@ -1,21 +1,17 @@
-
 #include <cstddef>
 #include <memory>
 #include <png.h>
 #include <iostream>
 #include <fstream>
 #include <ctime>
-#include "FreeImage.h"
-#define _GLIBCXX_USE_CXX11_ABI 0 
 #include "render.hpp"
-#include "utils.hh"
+#include "image_processor.hh"
 
-#define BPP 24
 
 void dilation_cpu(unsigned char* buffer, unsigned char* image, int width, int height)
 {
 
-  int structuring_radius = 3;
+  int structuring_radius = 1;
 
   for (int y = 0; y < height; ++y)
   {
@@ -25,14 +21,14 @@ void dilation_cpu(unsigned char* buffer, unsigned char* image, int width, int he
       bool stop = false;
       int start_x = x-structuring_radius < 0 ? 0 : x-structuring_radius;
       int start_y = y-structuring_radius < 0 ? 0 : y-structuring_radius;
-      int end_x = x+structuring_radius >= width ? width : x+structuring_radius;
-      int end_y = y+structuring_radius >= height ? height : y+structuring_radius;
+      int end_x = x+structuring_radius > width ? width : x+structuring_radius;
+      int end_y = y+structuring_radius > height ? height : y+structuring_radius;
 
-      for (int i = start_y; i < end_y && !stop; ++i)
+      for (int i = start_y; i <= end_y && !stop; ++i)
       {
-        for (int j = start_x; j < end_x && !stop; ++j)
+        for (int j = start_x; j <= end_x && !stop; ++j)
         {
-          if (image[i*width + j] == 0)
+          if ((int)image[i*width + j] == 0)
           {
             buffer[y*width + x] = 0;
             stop = true;
@@ -40,7 +36,7 @@ void dilation_cpu(unsigned char* buffer, unsigned char* image, int width, int he
         }
       }
       if (!stop)
-        buffer[y*height+x] = 255;
+        buffer[y*width+x] = 255;
     }
   }
 }
@@ -48,7 +44,7 @@ void dilation_cpu(unsigned char* buffer, unsigned char* image, int width, int he
 void erosion_cpu(unsigned char* buffer, unsigned char* image, int width, int height)
 {
 
-  int structuring_radius = 2;
+  int structuring_radius = 1;
 
   for (int y = 0; y < height; ++y)
   {
@@ -58,12 +54,12 @@ void erosion_cpu(unsigned char* buffer, unsigned char* image, int width, int hei
       bool stop = false;
       int start_x = x-structuring_radius < 0 ? 0 : x-structuring_radius;
       int start_y = y-structuring_radius < 0 ? 0 : y-structuring_radius;
-      int end_x = x+structuring_radius >= width ? width : x+structuring_radius;
-      int end_y = y+structuring_radius >= height ? height : y+structuring_radius;
+      int end_x = x+structuring_radius > width ? width : x+structuring_radius;
+      int end_y = y+structuring_radius > height ? height : y+structuring_radius;
 
-      for (int i = start_y; i < end_y && !stop; ++i)
+      for (int i = start_y; i <= end_y && !stop; ++i)
       {
-        for (int j = start_x; j < end_x && !stop; ++j)
+        for (int j = start_x; j <= end_x && !stop; ++j)
         {
           if ((int)image[i*width + j] == 255)
           {
@@ -73,7 +69,7 @@ void erosion_cpu(unsigned char* buffer, unsigned char* image, int width, int hei
         }
       }
       if (!stop)
-        buffer[y*height+x] = 0;
+        buffer[y*width+x] = 0;
     }
   }
 }
@@ -85,38 +81,34 @@ int main(int argc, char** argv)
   (void) argc;
   (void) argv;
 
-  if (argc < 2)
+  if (argc < 6)
+  {
+    std::cout << "Missing args: <operation> <src> <width> <height> <dst>" << std::endl;
     return 1;
-  FreeImage_Initialise();
-  FIBITMAP* image = FreeImage_Load(FIF_BMP, argv[1], BMP_DEFAULT);
-  int width = FreeImage_GetWidth(image);
-  int height = FreeImage_GetHeight(image);
+  }
 
-  unsigned char* uc_image = (unsigned char*)malloc(width*height*sizeof(unsigned char));
-  FIBITMAP_to_uc(image, uc_image, width, height);
-  std::cout << width << "  " << height << std::endl;
+  std::string type = argv[1];
+  std::string src = argv[2];
+  int width = std::stoi(argv[4]);
+  int height = std::stoi(argv[3]);
+  std::string dst = argv[5];
 
+  std::cout << width << " " << height << std::endl;
+  
+  unsigned char *uc_image = file_to_array(src, width * height);
+  
   unsigned char* buffer = (unsigned char *)malloc(width*height*sizeof(unsigned char));
 
   std::clock_t start;
 
-  erosion_cpu(buffer, uc_image, width, height);
+  if (!type.compare("dilation"))
+    dilation_cpu(buffer, uc_image, width, height);
+  else
+    erosion_cpu(buffer, uc_image, width, height);
 
   clock_t end = std::clock();
   std::cout << "Time: " << (end - start) / (double)(CLOCKS_PER_SEC / 1000) << " ms" << std::endl;
 
-  FIBITMAP* result = FreeImage_Allocate(width, height, BPP);
-
-  if (!result)
-  {
-    std::cout << "Could not allocate new image." << std::endl;
-    exit(1);
-  }
-
-  uc_to_FIBITMAP(buffer, result, width, height);
-  if (FreeImage_Save(FIF_BMP, result, "output.bmp", BMP_DEFAULT))
-    std::cout << "Image output.bmp saved." << std::endl;
-  FreeImage_DeInitialise();
-  return 0;
+  array_to_file(buffer, dst, height, width);
 }
 

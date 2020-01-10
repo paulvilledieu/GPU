@@ -1,5 +1,4 @@
-#include<iostream>
-#include<fstream>
+#include "image_processor.hh"
 
 unsigned char *file_to_array(std::string filename, unsigned int size) {
   std::fstream file;
@@ -9,7 +8,6 @@ unsigned char *file_to_array(std::string filename, unsigned int size) {
   unsigned int i = 0;
   while(file >> word && i < size) { //take word and print
     result[i] = std::stoi(word);
-    std::cout << (int)result[i] << std::endl;
     ++i;
   }
   file.close();
@@ -18,7 +16,8 @@ unsigned char *file_to_array(std::string filename, unsigned int size) {
 
 void array_to_file(unsigned char *image, std::string filename, unsigned int height, unsigned int width)
 {
-  std::ofstream ofs(filename);
+  std::ofstream ofs;
+  ofs.open(filename, std::ofstream::out);
   for (int i = 0; i < height; ++i)
   {
     for (int j = 0; j < width; ++j)
@@ -27,19 +26,20 @@ void array_to_file(unsigned char *image, std::string filename, unsigned int heig
     }
     ofs << std::endl;
   }
+  ofs.close();
 }
 
-int main(int argc, char *argv[]) {
-  if (argc < 4)
-  {
-    std::cerr << "Please provied a filename, a height and a width." << std::endl;
-    return 1;
-  }
-  unsigned int width = std::stoi(argv[3]);
-  unsigned int height = std::stoi(argv[2]);
-  unsigned char *image = file_to_array(argv[1], width*height);
+// int main(int argc, char *argv[]) {
+//   if (argc < 4)
+//   {
+//     std::cerr << "Please provied a filename, a height and a width." << std::endl;
+//     return 1;
+//   }
+//   unsigned int width = std::stoi(argv[3]);
+//   unsigned int height = std::stoi(argv[2]);
+//   unsigned char *image = file_to_array(argv[1], width*height);
 
-  array_to_file(image, "mini_out.txt", 3, 4);
-  free(image);
-}
+//   array_to_file(image, "mini_out.txt", 3, 4);
+//   free(image);
+// }
 
