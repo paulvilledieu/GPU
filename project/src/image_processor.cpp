@@ -32,11 +32,11 @@ void array_to_file(unsigned char *image, std::string filename, unsigned int heig
 int main(int argc, char *argv[]) {
   if (argc < 4)
   {
-    std::cerr << "Please provied a filename, a width and a height." << std::endl;
+    std::cerr << "Please provied a filename, a height and a width." << std::endl;
     return 1;
   }
-  unsigned int width = std::stoi(argv[2]);
-  unsigned int height = std::stoi(argv[3]);
+  unsigned int width = std::stoi(argv[3]);
+  unsigned int height = std::stoi(argv[2]);
   unsigned char *image = file_to_array(argv[1], width*height);
 
   array_to_file(image, "mini_out.txt", 3, 4);
