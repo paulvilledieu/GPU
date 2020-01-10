@@ -1,7 +1,7 @@
 #include<iostream>
 #include<fstream>
 
-unsigned char *file_to_array(std::string filename, unsigned size) {
+unsigned char *file_to_array(std::string filename, unsigned int size) {
   std::fstream file;
   std::string word;
   file.open(filename.c_str());
@@ -16,6 +16,19 @@ unsigned char *file_to_array(std::string filename, unsigned size) {
   return result;
 }
 
+void array_to_file(unsigned char *image, std::string filename, unsigned int height, unsigned int width)
+{
+  std::ofstream ofs(filename);
+  for (int i = 0; i < height; ++i)
+  {
+    for (int j = 0; j < width; ++j)
+    {
+      ofs << (int)image[i*width+j] << " ";
+    }
+    ofs << std::endl;
+  }
+}
+
 int main(int argc, char *argv[]) {
   if (argc < 4)
   {
@@ -25,7 +38,8 @@ int main(int argc, char *argv[]) {
   unsigned int width = std::stoi(argv[2]);
   unsigned int height = std::stoi(argv[3]);
   unsigned char *image = file_to_array(argv[1], width*height);
-  
+
+  array_to_file(image, "mini_out.txt", 3, 4);
   free(image);
 }
 
