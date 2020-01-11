@@ -11,7 +11,7 @@
 void dilation_cpu(unsigned char* buffer, unsigned char* image, int width, int height)
 {
 
-  int structuring_radius = 20;
+  int structuring_radius = 3;
 
   for (int y = 0; y < height; ++y)
   {
@@ -44,7 +44,7 @@ void dilation_cpu(unsigned char* buffer, unsigned char* image, int width, int he
 void erosion_cpu(unsigned char* buffer, unsigned char* image, int width, int height)
 {
 
-  int structuring_radius = 10;
+  int structuring_radius = 3;
 
   for (int y = 0; y < height; ++y)
   {
