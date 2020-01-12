@@ -4,6 +4,8 @@
 #include <iostream>
 #include <fstream>
 #include <ctime>
+#include <chrono>
+#include <iomanip>
 #include "render.hpp"
 #include "image_processor.hh"
 
@@ -99,15 +101,16 @@ int main(int argc, char** argv)
   
   unsigned char* buffer = (unsigned char *)malloc(width*height*sizeof(unsigned char));
 
-  std::clock_t start;
+  std::clock_t c_start = std::clock();
 
   if (!type.compare("dilation"))
     dilation_cpu(buffer, uc_image, width, height);
   else
     erosion_cpu(buffer, uc_image, width, height);
 
-  clock_t end = std::clock();
-  std::cout << "Time: " << (end - start) / (double)(CLOCKS_PER_SEC / 1000) << " ms" << std::endl;
+  std::clock_t c_end = std::clock();
+  std::cout << std::fixed << std::setprecision(2) << "CPU time used: "
+              << 1000.0 * (c_end-c_start) / CLOCKS_PER_SEC << " ms\n";
 
   array_to_file(buffer, dst, height, width);
 }

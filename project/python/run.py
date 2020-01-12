@@ -18,8 +18,6 @@ if sys.argv[1] == "--cpu":
     os.system("g++ src/morpho_cpu.cpp src/image_processor.cpp -o morpho_cpu")
     inputs_jpg = os.listdir(jpg_path)
     
-
-
     inputs_with_shapes = []
     for f in inputs_jpg:
         filename = os.path.join(txt_path, f.split('.')[0] + ".txt")
@@ -45,10 +43,18 @@ if "--display" in sys.argv:
     for i in range(rows):
         erosion = results_out[i].split(".")[0] + "_erosion.jpg"
         dilation = results_out[i].split(".")[0] + "_dilation.jpg"
-        print(erosion)
+        
         axs[i, 0].imshow(cv2.imread(results_in[i], 0))
+        axs[i, 0].set_title('Input ' + results_in[i].split("/")[1])
+        axs[i, 0].axis('off')
+
         axs[i, 1].imshow(cv2.imread(erosion, 0))
+        axs[i, 1].set_title('Erosion ' + results_in[i].split("/")[1])
+        axs[i, 1].axis('off')
+
         axs[i, 2].imshow(cv2.imread(dilation, 0))
+        axs[i, 2].set_title('Dilation ' + results_in[i].split("/")[1])
+        axs[i, 2].axis('off')
 
     plt.show()
     
