@@ -16,6 +16,9 @@ jpg_path = "jpg/"
 if sys.argv[1] == "--cpu":
     print("Compiling morpho for cpu...")
     os.system("g++ src/morpho_cpu.cpp src/image_processor.cpp -o morpho_cpu")
+    bench_files = ["bench/bench_cpu_dilation.csv"]
+    print("Emptying " + bench_files[0] + "...")
+    open(bench_files[0], 'w').close()
     inputs_jpg = os.listdir(jpg_path)
     
     inputs_with_shapes = []

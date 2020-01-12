@@ -109,8 +109,18 @@ int main(int argc, char** argv)
     erosion_cpu(buffer, uc_image, width, height);
 
   std::clock_t c_end = std::clock();
+  float cpu_time = 1000.0 * (c_end-c_start) / CLOCKS_PER_SEC;
   std::cout << std::fixed << std::setprecision(2) << "CPU time used: "
-              << 1000.0 * (c_end-c_start) / CLOCKS_PER_SEC << " ms\n";
+              << cpu_time << " ms\n";
+   
+  if (!type.compare("dilation"))
+  {
+    std::ofstream bench_file;
+    std::string bench_file_name = "bench/bench_cpu_" + type + ".csv";
+    bench_file.open(bench_file_name, std::ios_base::app); // append instead of overwrite
+    bench_file << src << ", " << cpu_time << std::endl;
+  }
+ 
 
   array_to_file(buffer, dst, height, width);
 }

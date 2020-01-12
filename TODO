@@ -1,17 +1,35 @@
 CPU
-  # Erosion     [ ]
-  # Dilatation  [ ]
-  # Structuring Elements  [ ]
-        # Square            [ ]
+  # Erosion     [X]
+  # Dilatation  [X]
+  # Structuring Elements  [X]
+        # Square            [X]
         # Ball              [ ]
 
-GPU
-  # Erosion     [ ]
-  # Dilatation  [ ]
-  # Structuring Elements  [ ]
-        # Square            [ ]
+GPU global memory
+  # Erosion     [X]
+  # Dilatation  [X]
+  # Structuring Elements  [X]
+        # Square            [X]
         # Ball              [ ]
+  # Coalesced access   [ ]
 
-# Benchmark using google lib
-  Currently have spdlog not include problem
+GPU global memory
+  # Erosion     [X]
+  # Dilatation  [X]
+  # Structuring Elements  [X]
+        # Square            [X]
+        # Ball              [ ]
+  # Coalesced access   [ ]
+
+Benchmark
+  CPU                             [X]
+    Time                          [X]
+    Graphs                        [X]
+    Different image size          [X]
+    Different structuring radius  [ ]
+  GPU                             [X]
+    Time                          [X]
+    Graphs                        [X]
+    Different image size          [X]
+    Different structuring radius  [ ]
 
