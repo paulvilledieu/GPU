@@ -1,7 +1,7 @@
-txt/B_1024.txt, 1133.31
-txt/test.txt, 10.551
-txt/B_512.txt, 271.796
-txt/circles.txt, 12.52
-txt/B_256.txt, 63.622
-txt/B_2048.txt, 4641.63
-txt/B_128.txt, 14.117
+txt/1-B_128.txt, 14.903
+txt/2-B_256.txt, 61.383
+txt/3-circles.txt, 15.225
+txt/4-B_512.txt, 241.164
+txt/5-B_1024.txt, 986.714
+txt/6-B_2048.txt, 4099.5
+txt/7-B_4096.txt, 16479
