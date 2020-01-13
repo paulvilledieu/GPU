@@ -10,7 +10,7 @@
 #include "image_processor.hh"
 #include <cuda_runtime_api.h>
 #include <cuda.h>
-
+#include <iomanip>
 
 // Usage: ./mandel
 int main(int argc, char** argv)
@@ -18,9 +18,9 @@ int main(int argc, char** argv)
   (void) argc;
   (void) argv;
 
-  if (argc < 6)
+  if (argc < 7)
   {
-    std::cout << "Missing args: <operation> <src> <width> <height> <dst>" << std::endl;
+    std::cout << "Missing args: <operation> <src> <width> <height> <structuring radius> <dst>" << std::endl;
     return 1;
   }
 
@@ -28,17 +28,17 @@ int main(int argc, char** argv)
   std::string src = argv[2];
   int width = std::stoi(argv[4]);
   int height = std::stoi(argv[3]);
-  std::string dst = argv[5];
+  int structuring_radius = std::stoi(argv[5]);
+  std::string dst = argv[6];
 
   std::cout << width << " " << height << std::endl;
-  
+
   unsigned char *uc_image = file_to_array(src, width * height);
-  
+
   int size = width * height * sizeof(unsigned char);
-  
+
   //unsigned char* buffer = (unsigned char *)malloc(size);
 
-  std::clock_t start;
 
   int stride = 1;
 
@@ -55,13 +55,14 @@ int main(int argc, char** argv)
   cudaMemcpy(src_host, uc_image, size, cudaMemcpyHostToHost);
   cudaMemcpy(src_device, src_host, size, cudaMemcpyHostToDevice);
 
-  int structuring_radius = 1;
 
+  std::clock_t c_start = std::clock();
   run_kernel(type, dst_device, src_device, width, height, structuring_radius, stride);
-
+  std::clock_t c_end = std::clock();
+  float cpu_time = 1000.0 * (c_end-c_start) / CLOCKS_PER_SEC;
+  std::cout << std::fixed << std::setprecision(2) << "CPU time used: "
+              << cpu_time << " ms\n";
   cudaMemcpy(dst_host, dst_device, size, cudaMemcpyDeviceToHost);
-  clock_t end = std::clock();
-  std::cout << "Time: " << (end - start) / (double)(CLOCKS_PER_SEC / 1000) << " ms" << std::endl;
 
   array_to_file(dst_host, dst, height, width);
 }
