@@ -18,10 +18,11 @@ def txt_to_image(src, dst):
     image = pd.read_csv(src, sep=' ').values
     cv2.imwrite(dst, image)
 
-if len(sys.argv) < 4:
+"""if len(sys.argv) < 4:
     "Please provide a conversion, source, a dest."
 else:
     if sys.argv[1] == "encode":
         image_to_txt(sys.argv[2], sys.argv[3])
     else:
         txt_to_image(sys.argv[2], sys.argv[3])
+"""

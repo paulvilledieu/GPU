@@ -10,11 +10,8 @@
 #include "image_processor.hh"
 
 
-void dilation_cpu(unsigned char* buffer, unsigned char* image, int width, int height)
+void dilation_cpu(unsigned char* buffer, unsigned char* image, int width, int height, bool is_square, int structuring_radius)
 {
-
-  int structuring_radius = 3;
-
   for (int y = 0; y < height; ++y)
   {
     for (int x = 0; x < width; ++x)
@@ -30,7 +27,7 @@ void dilation_cpu(unsigned char* buffer, unsigned char* image, int width, int he
       {
         for (int j = start_x; j <= end_x && !stop; ++j)
         {
-          if ((int)image[i*width + j] == 0)
+          if ((is_square && (int)image[i*width + j] == 0) || (!is_square && L2_dist(x, j, y, i) <= structuring_radius && (int)image[i*width+j] == 0))
           {
             buffer[y*width + x] = 0;
             stop = true;
@@ -43,10 +40,9 @@ void dilation_cpu(unsigned char* buffer, unsigned char* image, int width, int he
   }
 }
 
-void erosion_cpu(unsigned char* buffer, unsigned char* image, int width, int height)
+void erosion_cpu(unsigned char* buffer, unsigned char* image, int width, int height, bool is_square, int structuring_radius)
 {
 
-  int structuring_radius = 3;
 
   for (int y = 0; y < height; ++y)
   {
@@ -83,9 +79,9 @@ int main(int argc, char** argv)
   (void) argc;
   (void) argv;
 
-  if (argc < 6)
+  if (argc < 8)
   {
-    std::cout << "Missing args: <operation> <src> <width> <height> <dst>" << std::endl;
+    std::cout << "Missing args: <operation> <src> <width> <height> <structuring_type> <structuring_radius> <dst>" << std::endl;
     return 1;
   }
 
@@ -93,7 +89,9 @@ int main(int argc, char** argv)
   std::string src = argv[2];
   int width = std::stoi(argv[4]);
   int height = std::stoi(argv[3]);
-  std::string dst = argv[5];
+  std::string dst = argv[7];
+  std::string structuring_type = argv[5];
+  int structuring_radius = std::stoi(argv[6]);
 
   std::cout << width << " " << height << std::endl;
   
@@ -104,9 +102,9 @@ int main(int argc, char** argv)
   std::clock_t c_start = std::clock();
 
   if (!type.compare("dilation"))
-    dilation_cpu(buffer, uc_image, width, height);
+    dilation_cpu(buffer, uc_image, width, height, !structuring_type.compare("square"), structuring_radius);
   else
-    erosion_cpu(buffer, uc_image, width, height);
+    erosion_cpu(buffer, uc_image, width, height, !structuring_type.compare("square"), structuring_radius);
 
   std::clock_t c_end = std::clock();
   float cpu_time = 1000.0 * (c_end-c_start) / CLOCKS_PER_SEC;

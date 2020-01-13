@@ -4,8 +4,8 @@ import os
 from image_to_txt import image_to_txt, txt_to_image
 import cv2
 
-if len(sys.argv) < 2:
-    print("Please provide a version (--cpu or --gpu)")
+if len(sys.argv) < 3:
+    print("Please provide a version (--cpu or --gpu) and a structuring element type.")
     exit(1)
 
 txt_path = "txt/"
@@ -22,6 +22,8 @@ if sys.argv[1] == "--cpu":
     inputs_jpg = os.listdir(jpg_path)
     
     inputs_with_shapes = []
+    t = sys.argv[2][2:]
+
     for f in inputs_jpg:
         filename = os.path.join(txt_path, f.split('.')[0] + ".txt")
         shape = cv2.imread(os.path.join(jpg_path, f), 0).shape
@@ -34,8 +36,8 @@ if sys.argv[1] == "--cpu":
             txt_file = f.split(".")[0] + "_" + s + ".txt"
             in_filename = os.path.join(txt_path, f.split(".")[0] + ".txt")
             out_filename = os.path.join(out_txt_path, txt_file)
-            print("./morpho_cpu " + s + " " + in_filename + " " + str(x) + " " + str(y) + " " + out_filename)
-            os.system("./morpho_cpu " + s + " " + in_filename + " " + str(x) + " " + str(y) + " " + out_filename)
+            print("./morpho_cpu " + s + " " + in_filename + " " + str(x) + " " + str(y) + " " + t + " 5 " + out_filename)
+            os.system("./morpho_cpu " + s + " " + in_filename + " " + str(x) + " " + str(y) + " " + t + " 5 " + out_filename)
             txt_to_image(out_filename, os.path.join(out_jpg_path, txt_file.split(".")[0] + ".jpg"))
 
 if "--display" in sys.argv:

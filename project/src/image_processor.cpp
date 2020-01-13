@@ -29,6 +29,11 @@ void array_to_file(unsigned char *image, std::string filename, unsigned int heig
   ofs.close();
 }
 
+float L2_dist(int ax, int bx, int ay, int by)
+{
+  return sqrt((bx-ax)*(bx-ax) + (by-ay)*(by-ay));
+}
+
 // int main(int argc, char *argv[]) {
 //   if (argc < 4)
 //   {
