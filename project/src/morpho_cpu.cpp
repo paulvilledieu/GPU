@@ -111,6 +111,7 @@ int main(int argc, char** argv)
   std::cout << std::fixed << std::setprecision(2) << "CPU time used: "
               << cpu_time << " ms\n";
    
+  
   if (!type.compare("dilation"))
   {
     std::ofstream bench_file;

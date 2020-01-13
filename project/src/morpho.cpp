@@ -11,6 +11,7 @@
 #include <cuda_runtime_api.h>
 #include <cuda.h>
 #include <iomanip>
+#include <map>
 
 // Usage: ./mandel
 int main(int argc, char** argv)
@@ -60,9 +61,27 @@ int main(int argc, char** argv)
   run_kernel(type, dst_device, src_device, width, height, structuring_radius, stride);
   std::clock_t c_end = std::clock();
   float cpu_time = 1000.0 * (c_end-c_start) / CLOCKS_PER_SEC;
-  std::cout << std::fixed << std::setprecision(2) << "CPU time used: "
+  std::cout << std::fixed << std::setprecision(2) << "GPU time used: "
               << cpu_time << " ms\n";
   cudaMemcpy(dst_host, dst_device, size, cudaMemcpyDeviceToHost);
+
+  std::map<std::string, std::string> file_to_csv =
+  {
+    {"dilation", "bench/bench_gpu_basic.csv"},
+    {"dilation_sep", "bench/bench_gpu_sep.csv"},
+    {"dilation_sep_shared", "bench/bench_gpu_sep_shared.csv"},
+  };
+
+
+  std::map<std::string, std::string>::iterator it = file_to_csv.find(type);
+
+  if (it != file_to_csv.end())
+  {
+    std::ofstream bench_file;
+    std::string bench_file_name = it->second;
+    bench_file.open(bench_file_name, std::ios_base::app); // append instead of overwrite
+    bench_file << src << ", " << cpu_time << std::endl;
+  }
 
   array_to_file(dst_host, dst, height, width);
 }
