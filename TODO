@@ -3,7 +3,7 @@ CPU
   # Dilatation  [X]
   # Structuring Elements  [X]
         # Square            [X]
-        # Ball              [ ]
+        # Ball              [X]
 
 GPU global memory
   # Erosion     [X]
@@ -13,7 +13,7 @@ GPU global memory
         # Ball              [ ]
   # Coalesced access   [ ]
 
-GPU global memory
+GPU shared memory
   # Erosion     [X]
   # Dilatation  [X]
   # Structuring Elements  [X]

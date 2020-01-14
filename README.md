@@ -4,15 +4,17 @@
   $ cd project/
   $ ./start.sh
 
-- How to run the project:
-  $ cd build/
-  $ ./run -m CPU
+- Run the test suite :
 
-- Benchmark lib :
-  https://github.com/google/benchmark
+  For CPU (square or ball structuring elements):
+  $ python3 python/run.py --cpu square --display
+  $ python3 python/run.py --cpu ball --display
+ 
+  For GPU:
+  $ python3 python/run.py --gpu --display
 
-Use monkey.png to test our programs.
-We load the image correctly but our algorithm is not working.
-need to check if sizeof(...) are good
-after that, check if algo in kernel is good but i think
-check if the number of threads are correct
+- Run bench :
+
+$ python3 python/bench.py
+
+This script uses the files in bench/ dir to plot graphs.
