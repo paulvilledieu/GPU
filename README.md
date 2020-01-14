@@ -18,3 +18,7 @@
 $ python3 python/bench.py
 
 This script uses the files in bench/ dir to plot graphs.
+
+We almost never launch the executables morpho_cpu and morpho_gpu from the command line
+as we have run.py that does this for us. If you really want to use it, type ./morpho_cpu
+or ./morppho_gpu and it will show the usage.
